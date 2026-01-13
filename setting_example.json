@@ -1,0 +1,17 @@
+{
+    "section_name": {
+        "mega": [
+            {
+                "channel_id": "XXXXXXXXXXXXXXXXXXXXXXX",
+                "server": "TEST PERSONAL",
+                "name": "Name of what you want",
+                "regex": "Serie Name - (\\d+) \\(1080p\\)",
+                "last_episode": 8,
+                "path": "/home/username/path/to/save",
+                "user_id": null,
+                "guild_id": null,
+                "link": "(1080p)"
+            }
+        ]
+    }
+}
