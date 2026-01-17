@@ -1,17 +1,78 @@
 {
-    "section_name": {
-        "mega": [
+    "anime": {
+        "entries": [
             {
                 "channel_id": "XXXXXXXXXXXXXXXXXXXXXXX",
-                "server": "TEST PERSONAL",
-                "name": "Name of what you want",
-                "regex": "Serie Name - (\\d+) \\(1080p\\)",
-                "last_episode": 8,
+                "name": "Series Name Example",
+                "regex": "Episode (\\d+)",
+                "last_episode": 0,
                 "path": "/home/username/path/to/save",
-                "user_id": null,
-                "guild_id": null,
-                "link": "(1080p)"
+                "platforms": ["pixeldrain", "gdrive", "mega"],
+                "link_labels": {
+                    "pixeldrain": "[1080p]",
+                    "gdrive": "[1080p]",
+                    "mega": "[1080p]"
+                },
+                "share_type": "file"
+            },
+            {
+                "channel_id": "YYYYYYYYYYYYYYYYYYYYYYY",
+                "name": "Another Series",
+                "regex": "EP(\\d+)",
+                "last_episode": 5,
+                "path": "/home/username/downloads/another-series",
+                "platforms": ["mega", "gdrive"],
+                "link_labels": {
+                    "mega": "[HEVC]",
+                    "gdrive": "[4K]"
+                },
+                "share_type": "file"
             }
         ]
-    }
+    },
+    "donghua": {
+        "entries": [
+            {
+                "channel_id": "ZZZZZZZZZZZZZZZZZZZZZZZ",
+                "name": "Chinese Anime - Folder Batch",
+                "regex": "(\\d+)",
+                "last_episode": 38,
+                "path": "/media/donghua/series-name",
+                "platforms": ["pixeldrain"],
+                "link_labels": {
+                    "pixeldrain": "[Batch]"
+                },
+                "share_type": "folder",
+                "folder_regex": "第(\\d+)话",
+                "download_multiple": false
+            },
+            {
+                "channel_id": "AAAAAAAAAAAAAAAAAAAAAA",
+                "name": "Multi-platform Mix Example",
+                "regex": "第(\\d+)集",
+                "last_episode": 25,
+                "path": "/home/user/downloads/soul-land",
+                "platforms": ["pixeldrain", "gdrive", "mega"],
+                "link_labels": {
+                    "pixeldrain": "[Folder 1080p]",
+                    "gdrive": "[Single 4K]",
+                    "mega": "[Single 1080p]"
+                },
+                "platform_config": {
+                    "pixeldrain": {
+                        "share_type": "folder",
+                        "folder_regex": "第(\\d+)话",
+                        "download_multiple": false
+                    },
+                    "gdrive": {
+                        "share_type": "file"
+                    },
+                    "mega": {
+                        "share_type": "file"
+                    }
+                }
+            }
+        ]
+    },
+    "retry_queue": []
 }

@@ -13,10 +13,10 @@ A Python bot that monitors Discord channels and automatically downloads files fr
 
 ## Prerequisites
 
-- Python 3.10 or 3.12
+- Python 3.10+ (Tested on 3.10 and 3.12)
 - A Discord account and token
 - Mega.nz command-line tools
-- Linux environment (Ubuntu 24.04 or Debian 13 recommended)
+- Linux environment
 
 ## Installation
 
@@ -155,6 +155,8 @@ Rename `settings_example.json` to `settings.json` and fill it
 - `#(\\d+)` - Matches "#1", "#23", etc.
 
 **Important:** The `\\d+` must be in parentheses `()` to create a capture group for the episode number.
+
+Ask some LLM to create a regex based on the list of the last X link you wanted to download
 
 ### Link Label Matching
 
