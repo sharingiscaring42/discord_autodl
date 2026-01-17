@@ -1,3 +1,14 @@
 .env
 .venv/
 settings.json
+.github/copilot-instructions.md
+IMPLEMENTATION_SUMMARY.md
+INTEGRATION_PLAN.md
+MIGRATION_GUIDE.md
+research.txt
+setting.json
+pixeldrain_files.csv
+pixeldrain_report.html
+test_pixeldrain_v2.py
+opencode.json
+download_links.txt
