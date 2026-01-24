@@ -880,7 +880,7 @@ with open(CONFIG_PATH, "r") as f:
     # print(repr(raw))
     # print("=== END ===")
     config = json.loads(raw)
-    print("Loaded JSON OK.")
+    # print("Loaded JSON OK.")
 
 
     # config = json.load(f)
@@ -1030,10 +1030,11 @@ bot = discum.Client(token=DISCORD_TOKEN, log=False)
 @bot.gateway.command
 def on_message(resp):
     if resp.event.ready_supplemental:
-        print("="*60)
-        print("Bot logged in and monitoring...")
-        print(f"MAX_RETRY configured: {MAX_RETRY}")
-        print("="*60)
+        # print("="*60)
+        # print("Bot logged in and monitoring...")
+        # print(f"MAX_RETRY configured: {MAX_RETRY}")
+        # print("="*60)
+        print("Ready to process")
         # Process retry queue on startup
         process_retry_queue()
 
