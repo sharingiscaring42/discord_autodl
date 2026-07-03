@@ -1022,6 +1022,166 @@ def handle_new_message(message):
 
 
 # ============================================================================
+# MESSAGE SYNC / RECOVERY
+# ============================================================================
+
+def get_monitored_channel_ids():
+    """Collect all unique channel IDs from config entries."""
+    channel_ids = set()
+    for section, data in config.items():
+        if section == "retry_queue":
+            continue
+        if "entries" not in data:
+            continue
+        for entry in data["entries"]:
+            channel_ids.add(entry["channel_id"])
+    return channel_ids
+
+
+def sync_missed_messages(bot_client):
+    """
+    Fetch the last 50 messages from each monitored channel and process any
+    that contain episodes newer than last_episode. Covers gaps caused by
+    internet outages or bot restarts.
+    """
+    channel_ids = get_monitored_channel_ids()
+    if not channel_ids:
+        return
+
+    print("=" * 60)
+    print("[SYNC] Checking recent messages for missed downloads...")
+    print(f"[SYNC] Scanning {len(channel_ids)} channel(s)")
+    print("=" * 60)
+
+    total_recovered = 0
+
+    for channel_id in channel_ids:
+        try:
+            resp = bot_client.getMessages(channel_id, num=50)
+            if resp.status_code != 200:
+                print(f"[SYNC] Failed to fetch channel {channel_id}: HTTP {resp.status_code}")
+                continue
+
+            messages = resp.json()
+            if not messages:
+                continue
+
+            messages.sort(key=lambda m: int(m['id']))
+
+            count = 0
+            for msg in messages:
+                content = msg.get('content', '')
+                if not content:
+                    continue
+
+                fake_message = {
+                    'content': content,
+                    'channel_id': channel_id
+                }
+
+                for section, data in config.items():
+                    if section == "retry_queue":
+                        continue
+                    if "entries" not in data:
+                        continue
+
+                    for entry in data["entries"]:
+                        if entry["channel_id"] != channel_id:
+                            continue
+
+                        processor = MessageProcessor(entry)
+                        episode = processor.extract_episode(content)
+                        if not episode:
+                            continue
+
+                        print(f"[SYNC] Found missed: {entry['name']} EP{episode}")
+                        count += 1
+
+                        platform_links = processor.find_platform_links(content)
+                        if not platform_links:
+                            print(f"[SYNC] No links found for {entry['name']} EP{episode}, skipping")
+                            continue
+
+                        download_success = False
+                        for platform in processor.platforms:
+                            if platform not in platform_links:
+                                continue
+
+                            download_link = platform_links[platform]
+                            print(f"[SYNC] Downloading {entry['name']} EP{episode} from {platform}")
+
+                            downloader = get_downloader(platform)
+                            if not downloader:
+                                continue
+
+                            share_type = processor.get_platform_share_type(platform)
+                            folder_regex = processor.get_platform_folder_regex(platform)
+                            download_multiple = processor.get_platform_download_multiple(platform)
+
+                            download_args = {
+                                "link": download_link,
+                                "path": entry["path"],
+                                "entry_name": entry["name"],
+                                "episode": episode
+                            }
+
+                            if platform == "pixeldrain":
+                                download_args.update({
+                                    "share_type": share_type,
+                                    "folder_regex": folder_regex,
+                                    "download_multiple": download_multiple,
+                                    "last_episode": entry.get("last_episode", 0),
+                                    "discord_regex": processor.regex
+                                })
+
+                            result = downloader.download(**download_args)
+
+                            if result.success:
+                                print(f"[SYNC] SUCCESS: {entry['name']} EP{episode} from {platform}")
+                                if download_multiple and share_type == "folder":
+                                    match = re.search(r'EP(\d+)', result.filename)
+                                    if match:
+                                        entry["last_episode"] = int(match.group(1))
+                                    else:
+                                        entry["last_episode"] = episode
+                                else:
+                                    entry["last_episode"] = episode
+                                save_config()
+                                download_success = True
+                                total_recovered += 1
+                                break
+
+                            elif result.reason == "quota_exceeded":
+                                print(f"[SYNC] Quota exceeded on {platform}, adding to retry queue")
+                                add_to_retry_queue(
+                                    entry["name"], episode, platform,
+                                    download_link, entry["path"],
+                                    channel_id, "quota_exceeded"
+                                )
+                                continue
+                            else:
+                                print(f"[SYNC] {platform} failed: {result.reason}")
+                                continue
+
+                        if not download_success:
+                            print(f"[SYNC] All platforms failed for {entry['name']} EP{episode}")
+
+            if count > 0:
+                print(f"[SYNC] Channel {channel_id}: found {count} missed episode(s)")
+
+        except Exception as e:
+            print(f"[SYNC] Error scanning channel {channel_id}: {e}")
+
+        time.sleep(1)
+
+    if total_recovered > 0:
+        print(f"[SYNC] Recovery complete: {total_recovered} episode(s) downloaded")
+    else:
+        print("[SYNC] No missed episodes found, all caught up")
+    print("=" * 60)
+
+
+# ============================================================================
 # BOT INITIALIZATION
 # ============================================================================
 
@@ -1034,7 +1194,8 @@ def on_message(resp):
         print("Bot logged in and monitoring...")
         print(f"MAX_RETRY configured: {MAX_RETRY}")
         print("="*60)
-        # Process retry queue on startup
+        # Sync missed messages before processing retry queue
+        sync_missed_messages(bot)
         process_retry_queue()
 
     if resp.event.message:
